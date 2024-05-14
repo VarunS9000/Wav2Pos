@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -385,7 +384,7 @@ data = remove_punct_and_spans(conllu_data)
 eval_gold = [d[0] for d in data]
 actual_eval = [d[1] for d in data]
 
-with open('data/final_eval_data.pkl', 'wb') as f:
+with open('Data/final_eval_data.pkl', 'wb') as f:
     pickle.dump(data,f)
 
 import torchaudio
@@ -434,7 +433,7 @@ import pickle
 import random
 from collections import defaultdict
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor, Wav2Vec2Model, Wav2Vec2FeatureExtractor, Wav2Vec2CTCTokenizer
-tokenizer = Wav2Vec2CTCTokenizer("data/vocab_wav2vec.json", unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
+tokenizer = Wav2Vec2CTCTokenizer("Data/vocab_wav2vec.json", unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0, do_normalize=True, return_attention_mask=True)
 processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -460,7 +459,7 @@ def evaluate(speech_array,processor,model):
 
     return string_, hidden_states[-1], pred_speech.word_offsets
 
-with open('data/final_eval_data.pkl','rb') as f:
+with open('Data/final_eval_data.pkl','rb') as f:
     final_eval_data = pickle.load(f)
     
 eval_data = []
@@ -480,18 +479,18 @@ for f in tqdm(eval_data):
   eval_inner_data.append((a,b,c))
   predictions.append(a)
 
-with open('data/eval_inner_data.pkl','wb') as f:
+with open('Data/eval_inner_data.pkl','wb') as f:
     pickle.dump(eval_inner_data,f)
 
-with open('data/eval_inner_data.pkl','rb') as f:
+with open('Data/eval_inner_data.pkl','rb') as f:
     eval_inner_data = pickle.load(f)
     
 predictions = [e[0] for e in eval_inner_data]
 
-with open('data/tag_to_ix.pkl','rb') as f:
+with open('Data/tag_to_ix.pkl','rb') as f:
     tag_to_ix = pickle.load(f)
 
-with open('data/tag_to_ix0.pkl','rb') as f:
+with open('Data/tag_to_ix0.pkl','rb') as f:
     tag_to_ix0 = pickle.load(f)
 
 import pickle
@@ -553,7 +552,7 @@ for i in range(len(predictions)):
 
 ap_tags_on_eval = []
 for p in predictions_eval:
-  ap_tags_on_eval.append(tagger(p,'data/model_non_audio_plus_nhi.dat'))
+  ap_tags_on_eval.append(tagger(p,'Data/model_non_audio_plus_nhi.dat'))
 
 tags = []
 for list_ in ap_tags_on_eval:
@@ -853,10 +852,6 @@ eval_accuracy = correct_eval/total_eval
 
 print('Eval Accuracy: ',eval_accuracy)
 
-with open('data/avg_perceptron_results_on_predicted_eval_trancript.pkl', 'wb') as file:
-    # Dump the data into the file using pickle
-    pickle.dump(couples_eval_ap, file)
-
 class ForcedAlignmentCTCLSTM(nn.Module):
     def __init__(self, input_size, hidden_size, output_size,dropout):
         super(ForcedAlignmentCTCLSTM, self).__init__()
@@ -874,7 +869,7 @@ all_couples = []
 for i in range(10):
 
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  checkpoint = torch.load(f"drive/MyDrive/Part1/lstm_pos_{i}.pt")
+  checkpoint = torch.load(f"Part1/models/lstm_pos_{i}.pt")
   lstm_pos = ForcedAlignmentCTCLSTM(1024, 512, len(tag_to_ix0.keys()),0.3)
   lstm_pos.load_state_dict(checkpoint['model_state_dict'])
   lstm_pos = lstm_pos.to(device)
@@ -883,12 +878,9 @@ for i in range(10):
   couples1 = get_accuracy2(predictions_eval)
   all_couples.append(couples1)
 
-with open('sample_data/approach1_results.pkl', 'wb') as file:
-    # Dump the data into the file using pickle
-    pickle.dump(all_couples[-1], file)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-checkpoint = torch.load(f"drive/MyDrive/span_normalized3/Part2/lstm_pos_27.pt")
+checkpoint = torch.load(f"Part2/models/lstm_pos_27.pt")
 lstm_pos = ForcedAlignmentCTCLSTM(1024, 512, len(tag_to_ix.keys()),0.2)
 lstm_pos.load_state_dict(checkpoint['model_state_dict'])
 lstm_pos = lstm_pos.to(device)
@@ -897,11 +889,7 @@ print(f'Fetching accuracies for epoch 30')
 couples2= get_accuracy(predictions_eval)
 #print(f'Eval Accuracy: {eval_acc}')
 
-with open('data/approach2_results.pkl', 'wb') as file:
-    # Dump the data into the file using pickle
-    pickle.dump(couples2, file)
 
-# 95.47 84.75 83.52
 def calc_f1(tag, couples):
   tp = 0
   fn = 0

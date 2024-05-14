@@ -11,40 +11,37 @@ import random
 import pickle
 
 with open('POS_data/train_data.pkl', 'rb') as f: # audio embeddings pulled out of fine tuned wav2vec2 for training set
-    X_train = pickle.load(f)
+    X_train_pre = pickle.load(f)
 
 with open('POS_data/test_data.pkl', 'rb') as f: # audio embeddings pulled out of fine tuned wav2vec2 for validation set
-    X_test = pickle.load(f)
+    X_test_pre = pickle.load(f)
 
-with open('span_normalized/train_segments.pkl', 'rb') as f:
-      index_tuples_train = pickle.load(f)
+with open('span_normalized/train_segments.pkl', 'rb') as f: # word boundaries for each audio embeddings in training data derived from wav2vec2
+      train_word_segments = pickle.load(f)
 
-with open('span_normalized/test_segments.pkl', 'rb') as f:
-      index_tuples_test = pickle.load(f)
+with open('span_normalized/test_segments.pkl', 'rb') as f: # word boundaries for each audio embeddings in validation data derived from wav2vec2
+      test_word_segments = pickle.load(f)
 
-with open('span_normalized/train_gold.pkl', 'rb') as f:
+with open('span_normalized/train_gold.pkl', 'rb') as f: # gold transcription for training data
     train_gold = pickle.load(f)
 
-with open('span_normalized/test_gold.pkl', 'rb') as f:
+with open('span_normalized/test_gold.pkl', 'rb') as f: # gold transcription for validation data
     test_gold = pickle.load(f)
 
-with open('span_normalized/train_predictions.pkl', 'rb') as f:
+with open('span_normalized/predictions_train.pkl', 'rb') as f: # predicted transcriptions on training data 
     train_predictions = pickle.load(f)
 
-with open('span_normalized/test_predictions.pkl', 'rb') as f:
+with open('span_normalized/predictions_test.pkl', 'rb') as f: # predicted transcriptions on validation data
     test_predictions = pickle.load(f)
 
-with open('span_normalized/predictions_train.pkl', 'rb') as f:
-    predictions_train = pickle.load(f)
-
-with open('span_normalized/predictions_test.pkl', 'rb') as f:
-    predictions_test = pickle.load(f)
-
-with open('span_normalized3/Y_train.pkl', 'rb') as f:
+with open('span_normalized3/Y_train.pkl', 'rb') as f: # target labels for training data
     Y_train_pre = pickle.load(f)
 
-with open('span_normalized3/Y_test.pkl', 'rb') as f:
+with open('span_normalized3/Y_test.pkl', 'rb') as f: # target labels for validation data
     Y_test_pre = pickle.load(f)
+    
+X_train = [e[2][0] for e in X_train_pre]
+X_test = [e[2][0] for e in X_test_pre]
 
 class ForcedAlignmentCTCLSTM(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout):
@@ -87,12 +84,6 @@ num_ = len(X_train)
 num_test = len(X_test)
 
 import pickle
-with open('span_normalized/train_segments.pkl', 'rb') as f: # list of tuples for each training data point where each tuple corresponds to the first and last index for the corresponding word
-    train_word_segments = pickle.load(f)
-
-with open('span_normalized/test_segments.pkl', 'rb') as f: # list of tuples for each validation data point where each tuple corresponds to the first and last index for the corresponding word
-    test_word_segments = pickle.load(f)
-
 import torch
 import torch.nn as nn
 
@@ -238,12 +229,6 @@ def generate_lcs2(list1, list2):
     return lcs_sequence
 
 
-with open('span_normalized/train_gold.pkl', 'rb') as f: # Gold transcriptions of the training data
-    train_gold = pickle.load(f)
-
-with open('span_normalized/test_gold.pkl', 'rb') as f: # Gold transcriptions of the validation data
-    test_gold = pickle.load(f)
-
 actuals_train = []
 actuals_test = []
 
@@ -265,13 +250,8 @@ for i in range(len(test_gold)):
 
   actuals_test.append(temp)
 
-with open('span_normalized/predictions_train.pkl', 'rb') as f:  # predictions of the Wav2Vec2ASR on the train data
-      train_predictions = pickle.load(f)
 
-with open('span_normalized/predictions_test.pkl', 'rb') as f:  # predictions of the Wav2Vec2ASR on the validation data
-      test_predictions = pickle.load(f)
-
-def get_accuracy(model, train_sent_predictions, test_sent_predictions, X_train, X_test):
+def get_accuracy(train_sent_predictions, test_sent_predictions, X_train, X_test):
   
 
   with torch.no_grad():

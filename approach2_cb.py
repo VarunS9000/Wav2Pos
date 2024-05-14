@@ -54,7 +54,7 @@ def create_tuples(data_list):
 
   return tups
 
-with open('drive/MyDrive/span_normalized3/tag_to_ix.pkl', 'rb') as f: # vocabulary dictionary for POS tagger
+with open('Data/tag_to_ix.pkl', 'rb') as f: # vocabulary dictionary for POS tagger
     tag_to_ix = pickle.load(f)
 
 
@@ -133,23 +133,14 @@ def generate_lcs2(list1, list2):
 
     return lcs_sequence
   
-"""
-with open('drive/MyDrive/span_normalized/train_segments.pkl', 'rb') as f: # List of tuples for each of the train data, where the tuple contains the first and last index of the audio embedding that corresponds to a word
-      index_tuples_train = pickle.load(f)
-
-with open('drive/MyDrive/span_normalized/test_segments.pkl', 'rb') as f: # List of tuples for each of the validation data, where the tuple contains the first and last index of the audio embedding that corresponds to a word
-      index_tuples_test = pickle.load(f)
-      
-
-"""
 
 index_tuples_train = [create_tuples(t[-1]) for t in X_train] # List of tuples for each of the train data, where the tuple contains the first and last index of the audio embedding that corresponds to a word
 index_tuples_test = [create_tuples(t[-1]) for t in X_test] # List of tuples for each of the validation data, where the tuple contains the first and last index of the audio embedding that corresponds to a word
 
-with open('drive/MyDrive/span_normalized/train_gold.pkl', 'rb') as f: # Gold transcription for training data
+with open('span_normalized/train_gold.pkl', 'rb') as f: # Gold transcription for training data
       train_gold = pickle.load(f)
 
-with open('drive/MyDrive/span_normalized/test_gold.pkl', 'rb') as f: # Gold transcription for validation data
+with open('span_normalized/test_gold.pkl', 'rb') as f: # Gold transcription for validation data
       test_gold = pickle.load(f)
 
 actuals_train = []
@@ -173,10 +164,10 @@ for i in range(len(Y_test_pre)):
     temp.append((t2[j],t1[j][0]))
   actuals_test.append(temp)
 
-with open('drive/MyDrive/span_normalized/predictions_train.pkl', 'rb') as f: # predictions of the Wav2Vec2ASR on the train data
+with open('span_normalized/predictions_train.pkl', 'rb') as f: # predictions of the Wav2Vec2ASR on the train data
       train_predictions = pickle.load(f)
 
-with open('drive/MyDrive/span_normalized/predictions_test.pkl', 'rb') as f: # predictions of the Wav2Vec2ASR on the validation data
+with open('span_normalized/predictions_test.pkl', 'rb') as f: # predictions of the Wav2Vec2ASR on the validation data
       test_predictions = pickle.load(f)
 
 from collections import Counter
@@ -437,7 +428,7 @@ def train(lstm_pos, dropout):
                 'train_accuracies': train_accuracies,
                 'test_accuracies': test_accuracies,
                 'epoch': epoch,
-                }, f"drive/MyDrive/span_normalized3/Part2/lstm_pos_"+str(epoch)+".pt")
+                }, f"Part2/models/lstm_pos_"+str(epoch)+".pt")
 
 
 dropouts = [2] # 0.2 dropout geve the best results
@@ -460,7 +451,7 @@ for d in dropouts:
 
 for i in range(8,10):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  checkpoint = torch.load(f"drive/MyDrive/span_normalized2/Part2/lstm_pos_{3*i}.pt")
+  checkpoint = torch.load(f"Part2/models/lstm_pos_{3*i}.pt")
   lstm_pos = ForcedAlignmentCTCLSTM(1024, 512, len(tag_to_ix.keys()),0.2)
   lstm_pos.load_state_dict(checkpoint['model_state_dict'])
   lstm_pos = lstm_pos.to(device)
@@ -471,7 +462,7 @@ for i in range(8,10):
 
 from tqdm import tqdm
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-checkpoint = torch.load(f"drive/MyDrive/Part2/lstm_pos_28.pt")
+checkpoint = torch.load(f"Part2/models/lstm_pos_28.pt")
 lstm_pos = ForcedAlignmentCTCLSTM(1024, 512, len(tag_to_ix.keys()),0.2)
 lstm_pos.load_state_dict(checkpoint['model_state_dict'])
 lstm_pos = lstm_pos.to(device)
