@@ -32,8 +32,16 @@ def evaluate(speech_array,processor,model):
         m  = model(inputs.input_values, attention_mask=inputs.attention_mask)
         logits = m.logits
         hidden_states = m.hidden_states
+        
     pred_ids = torch.argmax(logits, dim=-1)
-    pred_speech = processor.batch_decode(pred_ids)
+    pred_speech = processor.batch_decode(pred_ids, output_word_offsets=True)
+    list_ = [d['word'] for d in pred_speech.word_offsets[0]]
+    string_ = " ".join(list_)
+    string_ = normalize(string_)
+    #tups = [(d['start_offset'],d['end_offset']) for d in pred_speech.word_offsets[0]]
+
+
+    return string_, hidden_states[-1], pred_speech.word_offsets
     
     return pred_speech[0], hidden_states[-1], pred_ids
 
@@ -52,11 +60,11 @@ sentences_test = df2['transcription'].values
 files_train = df1['file'].values
 files_test = df2['file'].values
 
-tokenizer = Wav2Vec2CTCTokenizer("vocab_asr.json", unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
+tokenizer = Wav2Vec2CTCTokenizer("vocab_wav2vec.json", unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0, do_normalize=True, return_attention_mask=True)
 processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = Wav2Vec2ForCTC.from_pretrained("checkpoint-2475")
+model = Wav2Vec2ForCTC.from_pretrained("checkpoint-7175")
 model.config.output_hidden_states = True
 model.config.output_attentions = True
 model.to(device)
@@ -69,13 +77,21 @@ all_data_test = []
 
 for f in tqdm(files_train):
     g = generate_speech_array(f)
-    speech, hidden_states, ctc_tokens = evaluate(g,processor,model)
-    all_data_train.append(speech,hidden_states,ctc_tokens)
+    speech, hidden_states, offsets = evaluate(g,processor,model)
+    all_data_train.append(speech,hidden_states,offsets)
 
 for f in tqdm(files_test):
     g = generate_speech_array(f)
-    speech, hidden_states, ctc_tokens = evaluate(g,processor,model)
-    all_data_test.append(speech,hidden_states,ctc_tokens)
+    speech, hidden_states, offsets = evaluate(g,processor,model)
+    all_data_test.append(speech,hidden_states,offsets)
+
+with open('train_data.pkl', 'wb') as file:
+    # Step 4: Use pickle.dump to save the data
+    pickle.dump(all_data_train, file)
+    
+with open('test_data.pkl', 'wb') as file:
+    # Step 4: Use pickle.dump to save the data
+    pickle.dump(all_data_test, file)
 
 
 
